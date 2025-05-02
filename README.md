@@ -1,4 +1,4 @@
 Admin dashboard for mushroom culturing system
 
 
-Open the branch "master" to see the project
+Open the branch "main" and select "master" to see the project
