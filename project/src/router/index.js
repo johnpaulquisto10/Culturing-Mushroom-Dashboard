@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import Login from '@/views/Login.vue'
@@ -22,9 +23,9 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/heater',
-    name: 'HeaterControl',
-    component: () => import('@/views/HeaterControl.vue'),
+    path: '/water',
+    name: 'WaterControl',
+    component: () => import('@/views/WaterControl.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -44,6 +45,12 @@ const routes = [
     name: 'About',
     component: () => import('@/views/About.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/analytics',
+    name: 'DataAnalytics', // Fixed to match Sidebar.vue
+    component: () => import('@/views/DataAnalytics.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -55,7 +62,7 @@ const router = createRouter({
 // Add authentication guard
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const isAuthenticated = true // Replace with your actual auth check
+  const isAuthenticated = true // Replace with your actual auth check (e.g., auth.currentUser)
   
   if (requiresAuth && !isAuthenticated) {
     next('/')

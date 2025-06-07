@@ -58,22 +58,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-
-const breadcrumbs = ref([
-  { title: 'Dashboard', to: { name: 'Home' } },
-  { title: 'Light Control', disabled: true }
-])
+import { ref, watch } from 'vue'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 const lightEnabled = ref(false)
-const brightnessLevel = ref('medium')
-const brightness = ref(50)
-
-const levelColor = computed(() => {
-  return {
-    low: 'grey',
-    medium: 'yellow',
-    high: 'amber'
-  }[brightnessLevel.value]
+watch(lightEnabled, async (val) => {
+  await setDoc(doc(db, 'controls', 'light'), {
+    value: val
+  })
 })
 </script>
+
+

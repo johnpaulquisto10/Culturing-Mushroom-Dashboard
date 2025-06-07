@@ -1,267 +1,223 @@
-<!-- components/pages/DashboardChart.vue -->
 <template>
   <v-card border flat rounded="lg" class="mt-4">
     <v-card-title class="d-flex align-center">
-      <v-icon color="primary" class="mr-2">mdi-chart-line</v-icon>
-      Environment Trends
+      <v-icon color="primary" class="mr-2">mdi-gauge</v-icon>
+      Environment Status
       <v-spacer />
       <v-btn-toggle v-model="timeRange" mandatory density="compact">
+        <v-btn value="realtime">Realtime</v-btn>
         <v-btn value="24h">24h</v-btn>
-        <v-btn value="7d">7d</v-btn>
-        <v-btn value="30d">30d</v-btn>
       </v-btn-toggle>
     </v-card-title>
+    
     <v-card-text>
-      <div class="chart-container">
-        <v-chart class="chart" :option="chartOptions" autoresize />
+      <div v-if="loading" class="text-center py-4">
+        <v-progress-circular indeterminate color="primary" />
+      </div>
+      
+      <div v-else class="gauge-container">
+        <v-row>
+          <v-col v-for="(gauge, index) in gaugeOptions" :key="index" cols="12" sm="6" md="4" lg="2.4">
+            <div class="gauge-wrapper">
+              <v-chart class="gauge" :option="gauge" autoresize />
+              <div class="gauge-title">{{ gauge.title.text }}</div>
+            </div>
+          </v-col>
+        </v-row>
       </div>
     </v-card-text>
   </v-card>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart } from 'echarts/charts'
+import { GaugeChart } from 'echarts/charts'
 import {
   TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GridComponent,
-  DatasetComponent,
-  DataZoomComponent
+  TooltipComponent
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 
-// Initialize ECharts
-use([
-  CanvasRenderer,
-  LineChart,
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GridComponent,
-  DatasetComponent,
-  DataZoomComponent
-])
+use([CanvasRenderer, GaugeChart, TitleComponent, TooltipComponent])
 
 const props = defineProps({
   environmentData: {
     type: Object,
     required: true
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 
-const timeRange = ref('24h')
+const timeRange = ref('realtime')
 
-// Generate chart data based on time range
-const generateChartData = () => {
-  const now = new Date()
-  const data = {
-    timestamps: [],
-    temperature: [],
-    humidity: [],
-    co2: [],
-    light: []
-  }
-
-  // Generate data points based on selected time range
-  const points = timeRange.value === '24h' ? 24 : timeRange.value === '7d' ? 7 : 30
-  
-  for (let i = points; i >= 0; i--) {
-    const time = new Date(now)
-    if (timeRange.value === '24h') {
-      time.setHours(now.getHours() - i)
-      data.timestamps.push(time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
-    } else {
-      time.setDate(now.getDate() - i)
-      data.timestamps.push(time.toLocaleDateString([], { month: 'short', day: 'numeric' }))
-    }
-    
-    // Use real data when available, otherwise simulate
-    data.temperature.push(props.environmentData.temperature || (25 + Math.sin(i / 2) * 3))
-  data.humidity.push(props.environmentData.humidity || (70 + Math.cos(i) * 15))
-data.co2.push(props.environmentData.co2 || (800 + Math.sin(i / 3) * 300))
-data.light.push(props.environmentData.lightIntensity || (500 + Math.sin(i / 4) * 300))
-
-  }
-
-  return data
+// Define normal ranges for each parameter (same as alert thresholds)
+const PARAMETER_RANGES = {
+  temperature: { min: 18, max: 24, unit: '°C' },
+  humidity: { min: 80, max: 95, unit: '%' },
+  co2: { min: 400, max: 2000, unit: 'ppm' },
+  pressure: { min: 950, max: 1050, unit: 'hPa' },
+  lightIntensity: { min: 500, max: 2000, unit: 'lx' }
 }
 
-const chartData = ref(generateChartData())
+const gaugeOptions = computed(() => [
+  createGaugeOption(
+    'Temperature',
+    props.environmentData.temperature,
+    PARAMETER_RANGES.temperature,
+    ['#ff5252', '#ff9800', '#4caf50']
+  ),
+  createGaugeOption(
+    'Humidity',
+    props.environmentData.humidity,
+    PARAMETER_RANGES.humidity,
+    ['#2196f3', '#00bcd4', '#4caf50']
+  ),
+  createGaugeOption(
+    'CO₂',
+    props.environmentData.co2,
+    PARAMETER_RANGES.co2,
+    ['#4caf50', '#ff9800', '#ff5252'] // Reversed for CO₂ (higher is worse)
+  ),
+  createGaugeOption(
+    'Pressure',
+    props.environmentData.pressure,
+    PARAMETER_RANGES.pressure,
+    ['#ffc107', '#ff9800', '#4caf50']
+  ),
+  createGaugeOption(
+    'Light',
+    props.environmentData.lightIntensity,
+    PARAMETER_RANGES.lightIntensity,
+    ['#9c27b0', '#e91e63', '#4caf50']
+  )
+])
 
-// Watch for changes in time range or environment data
-watch([timeRange, () => props.environmentData], () => {
-  chartData.value = generateChartData()
-}, { deep: true })
-
-const chartOptions = computed(() => ({
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'cross',
-      label: {
-        backgroundColor: '#6a7985'
+function createGaugeOption(title, value, range, colors) {
+  // Calculate safe range (80% of min-max range)
+  const safeRange = (range.max - range.min) * 0.8
+  const safeMin = range.min + (range.max - range.min - safeRange) / 2
+  const safeMax = range.max - (range.max - range.min - safeRange) / 2
+  
+  // Extend range slightly for visualization
+  const visualMin = Math.max(0, range.min - (range.max - range.min) * 0.2)
+  const visualMax = range.max + (range.max - range.min) * 0.2
+  
+  return {
+    title: {
+      text: title,
+      left: 'center',
+      top: '70%',
+      textStyle: {
+        color: '#64748b',
+        fontSize: 14,
+        fontWeight: 'normal'
       }
-    }
-  },
-  legend: {
-    data: ['Temperature', 'Humidity', 'CO₂', 'Light'],
-    bottom: 10
-  },
-  grid: {
-    left: '3%',
-    right: '4%',
-    bottom: '15%',
-    containLabel: true
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    data: chartData.value.timestamps,
-    axisLine: {
-      lineStyle: {
-        color: '#ccc'
-      }
-    }
-  },
-  yAxis: [
-    {
-      type: 'value',
-      name: 'Temperature (°C)',
-      position: 'left',
+    },
+    tooltip: {
+      formatter: `${title}: {c}${range.unit}`
+    },
+    series: [{
+      type: 'gauge',
+      min: visualMin,
+      max: visualMax,
       axisLine: {
         lineStyle: {
-          color: '#ff5252'
+          width: 20,
+          color: [
+            // Color segments for different value ranges
+            [safeMin / visualMax, colors[0]],
+            [safeMax / visualMax, colors[1]],
+            [1, colors[2]]
+          ]
         }
-      }
-    },
-    {
-      type: 'value',
-      name: 'Humidity (%)',
-      position: 'right',
-      axisLine: {
+      },
+      pointer: {
+        itemStyle: {
+          color: 'auto'
+        }
+      },
+      axisTick: {
+        distance: -20,
+        length: 6,
         lineStyle: {
-          color: '#2196f3'
+          color: '#fff',
+          width: 1
         }
-      }
-    },
-    {
-      type: 'value',
-      name: 'CO₂ (ppm)',
-      position: 'right',
-      offset: 80,
-      axisLine: {
+      },
+      splitLine: {
+        distance: -20,
+        length: 15,
         lineStyle: {
-          color: '#4caf50'
+          color: '#fff',
+          width: 2
         }
-      }
-    },
-    {
-      type: 'value',
-      name: 'Light (lx)',
-      position: 'right',
-      offset: 160,
-      axisLine: {
-        lineStyle: {
-          color: '#ffc107'
-        }
-      }
-    }
-  ],
-  series: [
-    {
-      name: 'Temperature',
-      type: 'line',
-      smooth: true,
-      lineStyle: {
-        width: 3,
-        color: '#ff5252'
       },
-      areaStyle: {
-        color: 'rgba(255, 82, 82, 0.1)'
+      axisLabel: {
+        color: 'auto',
+        distance: 15,
+        fontSize: 10
       },
-      emphasis: {
-        focus: 'series'
+      detail: {
+        valueAnimation: true,
+        formatter: `{value} ${range.unit}`,
+        color: 'auto',
+        fontSize: 16,
+        fontWeight: 'bold'
       },
-      data: chartData.value.temperature
-    },
-    {
-      name: 'Humidity',
-      type: 'line',
-      smooth: true,
-      lineStyle: {
-        width: 3,
-        color: '#2196f3'
-      },
-      areaStyle: {
-        color: 'rgba(33, 150, 243, 0.1)'
-      },
-      emphasis: {
-        focus: 'series'
-      },
-      yAxisIndex: 1,
-      data: chartData.value.humidity
-    },
-    {
-      name: 'CO₂',
-      type: 'line',
-      smooth: true,
-      lineStyle: {
-        width: 3,
-        color: '#4caf50'
-      },
-      areaStyle: {
-        color: 'rgba(76, 175, 80, 0.1)'
-      },
-      emphasis: {
-        focus: 'series'
-      },
-      yAxisIndex: 2,
-      data: chartData.value.co2
-    },
-    {
-      name: 'Light',
-      type: 'line',
-      smooth: true,
-      lineStyle: {
-        width: 3,
-        color: '#ffc107'
-      },
-      areaStyle: {
-        color: 'rgba(255, 193, 7, 0.1)'
-      },
-      emphasis: {
-        focus: 'series'
-      },
-      yAxisIndex: 3,
-      data: chartData.value.light
-    }
-  ],
-  dataZoom: [
-    {
-      type: 'inside',
-      start: 0,
-      end: 100
-    },
-    {
-      start: 0,
-      end: 100
-    }
-  ]
-}))
+      data: [{
+        value: value || 0,
+        name: title
+      }],
+      radius: '80%',
+      center: ['50%', '50%']
+    }]
+  }
+}
 </script>
 
 <style scoped>
-.chart-container {
+.gauge-container {
   width: 100%;
-  height: 400px;
+  min-height: 300px;
 }
 
-.chart {
+.gauge-wrapper {
+  position: relative;
+  height: 240px;
+  width: 100%;
+}
+
+.gauge {
   width: 100%;
   height: 100%;
+}
+
+.v-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  background: linear-gradient(to bottom right, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0 !important;
+}
+
+.v-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 960px) {
+  .gauge-wrapper {
+    height: 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .gauge-wrapper {
+    height: 180px;
+  }
 }
 </style>

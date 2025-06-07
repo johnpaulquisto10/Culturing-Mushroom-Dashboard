@@ -32,9 +32,6 @@
   </v-card>
 </template>
 
-
-
-
 <script setup>
 import { computed } from 'vue'
 
@@ -48,7 +45,7 @@ const props = defineProps({
 const metrics = computed(() => [
   {
     label: 'Temperature',
-    value: props.metrics.temperature,
+    value: props.metrics.temperature?.toFixed(1) || '--',
     unit: '°C',
     icon: 'mdi-thermometer',
     color: 'red-darken-1',
@@ -59,7 +56,7 @@ const metrics = computed(() => [
   },
   {
     label: 'Humidity',
-    value: props.metrics.humidity,
+    value: props.metrics.humidity?.toFixed(1) || '--',
     unit: '%',
     icon: 'mdi-water-percent',
     color: 'blue-darken-2',
@@ -70,7 +67,7 @@ const metrics = computed(() => [
   },
   {
     label: 'CO₂ Level',
-    value: props.metrics.co2,
+    value: props.metrics.co2?.toFixed(0) || '--',
     unit: 'ppm',
     icon: 'mdi-molecule-co2',
     color: 'green-darken-2',
@@ -81,7 +78,7 @@ const metrics = computed(() => [
   },
   {
     label: 'Light',
-    value: props.metrics.lightIntensity,
+    value: props.metrics.lightIntensity?.toFixed(0) || '--',
     unit: 'lx',
     icon: 'mdi-weather-sunny',
     color: 'amber-darken-2',
@@ -89,6 +86,17 @@ const metrics = computed(() => [
     trendIcon: 'mdi-minus',
     trendColor: 'grey-darken-1',
     class: 'bg-amber-lighten-5'
+  },
+  {
+    label: 'Pressure',
+    value: props.metrics.pressure?.toFixed(1) || '--',
+    unit: 'hPa',
+    icon: 'mdi-gauge',
+    color: 'deep-purple-darken-2',
+    trendValue: '-1.2',
+    trendIcon: 'mdi-arrow-down',
+    trendColor: 'deep-purple-darken-2',
+    class: 'bg-deep-purple-lighten-5'
   }
 ])
 </script>

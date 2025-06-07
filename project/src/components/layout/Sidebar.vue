@@ -1,3 +1,4 @@
+<!-- src/components/layout/Sidebar.vue -->
 <template>
   <v-navigation-drawer
     v-model="drawer"
@@ -23,7 +24,7 @@
       </v-list-subheader>
 
       <v-list-item
-        value="home"
+        value="dashboard"
         prepend-icon="mdi-view-dashboard"
         title="Dashboard"
         :to="{ name: 'Home' }"
@@ -103,10 +104,10 @@ const controlItems = ref([
     routeName: 'FanControl'
   },
   { 
-    title: 'Heater Control', 
-    icon: 'mdi-fire', 
-    value: 'heater',
-    routeName: 'HeaterControl'
+    title: 'Water Control', 
+    icon: 'mdi-water', 
+    value: 'water',
+    routeName: 'WaterControl'
   },
   { 
     title: 'Light Control', 
@@ -117,6 +118,12 @@ const controlItems = ref([
 ])
 
 const systemItems = ref([
+  { 
+    title: 'Data Analytics', 
+    icon: 'mdi-chart-line', 
+    value: 'analytics',
+    routeName: 'DataAnalytics' // Matches route name in index.js
+  },
   { 
     title: 'Settings', 
     icon: 'mdi-cog-outline', 

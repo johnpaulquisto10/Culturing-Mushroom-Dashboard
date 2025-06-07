@@ -58,22 +58,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-
-const breadcrumbs = ref([
-  { title: 'Dashboard', to: { name: 'Home' } },
-  { title: 'Fan Control', disabled: true }
-])
+import { ref, watch } from 'vue'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 const fanEnabled = ref(false)
-const fanLevel = ref('medium')
-const fanSpeed = ref(50)
-
-const levelColor = computed(() => {
-  return {
-    low: 'green',
-    medium: 'yellow',
-    high: 'red'
-  }[fanLevel.value]
+watch(fanEnabled, async (val) => {
+  await setDoc(doc(db, 'controls', 'fan'), {
+    value: val
+  })
 })
 </script>
+
+

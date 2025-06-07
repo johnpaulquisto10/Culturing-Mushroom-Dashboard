@@ -53,12 +53,19 @@ const chartOptions = computed(() => ({
   },
   legend: {
     data: props.chartData.datasets.map(d => d.label),
-    bottom: 0
+    bottom: 10,
+    itemGap: 20,
+    itemWidth: 12,
+    itemHeight: 12,
+    textStyle: {
+      fontSize: 12
+    }
   },
   grid: {
     left: '3%',
     right: '4%',
-    bottom: '15%',
+    top: '10%',
+    bottom: '20%',
     containLabel: true
   },
   xAxis: {
@@ -69,6 +76,10 @@ const chartOptions = computed(() => ({
       lineStyle: {
         color: '#ccc'
       }
+    },
+    axisLabel: {
+      rotate: props.chartData.labels.length > 10 ? 45 : 0,
+      interval: props.chartData.labels.length > 10 ? Math.floor(props.chartData.labels.length / 5) : 0
     }
   },
   yAxis: {
@@ -109,16 +120,18 @@ const chartOptions = computed(() => ({
 .analytics-chart {
   width: 100%;
   height: 100%;
-  min-height: 300px;
+  min-height: 400px;
+  position: relative;
 }
 
 .chart {
   width: 100%;
   height: 100%;
+  min-height: 400px;
 }
 
 .skeleton-loader {
   width: 100%;
-  height: 300px;
+  height: 400px;
 }
 </style>

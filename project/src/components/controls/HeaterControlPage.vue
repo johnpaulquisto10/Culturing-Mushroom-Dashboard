@@ -26,7 +26,7 @@
 
 <script setup>
 
-import HeaterControl from '@/views/HeaterControl.vue';
+import HeaterControl from '@/views/WaterControl.vue';
 
 const breadcrumbs = ref([
   { title: 'Dashboard', disabled: false, to: '/home' },
